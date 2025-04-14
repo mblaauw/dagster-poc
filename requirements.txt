@@ -1,0 +1,4 @@
+dagster
+dagster-k8s
+pandas
+pyyaml  # (if reading yaml files later)
