@@ -13,10 +13,10 @@ docker build -t $IMAGE_NAME .
 echo "✅ Docker image built: $IMAGE_NAME"
 
 # Optional: If you're using a local registry, push the image
-# echo "🚀 Pushing Docker image to local registry..."
-# docker tag $IMAGE_NAME localhost:5000/$IMAGE_NAME
-# docker push localhost:5000/$IMAGE_NAME
-# echo "✅ Docker image pushed to local registry."
+echo "🚀 Pushing Docker image to local registry..."
+docker tag $IMAGE_NAME localhost:5000/$IMAGE_NAME
+docker push localhost:5000/$IMAGE_NAME
+echo "✅ Docker image pushed to local registry."
 
 echo "🚀 Applying Kubernetes PVCs..."
 kubectl apply -f k8s/namespace.yaml
