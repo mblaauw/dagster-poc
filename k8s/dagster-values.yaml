@@ -21,11 +21,11 @@ runLauncher:
   type: "K8sRunLauncher"
 
   config:
-    jobNamespace: default
+    jobNamespace: dagster-poc
     imagePullPolicy: IfNotPresent
     dagsterK8sJobConfig:
       image: dagster-repo:latest
-      namespace: default
+      namespace: dagster-poc
       envConfigMaps: []
       envSecrets: []
       volumeMounts:

@@ -1,12 +1,14 @@
 import pandas as pd
 from dagster import asset, get_dagster_logger
+from dagster_project.resources import DataPaths
 
-@asset
-def bronze_asset():
+@asset(required_resource_keys={"data_paths"})
+def bronze_asset(context):
     logger = get_dagster_logger()
 
-    # Define input file path
-    input_file = "/data/bronze/bronze_data.csv"
+    # Use resource for path
+    bronze_path = context.resources.data_paths.bronze_path
+    input_file = f"{bronze_path}bronze_data.csv"
     logger.info(f"Reading bronze data from: {input_file}")
 
     try:

@@ -13,3 +13,9 @@ def bronze_to_silver_job():
 @job
 def silver_to_gold_job():
     gold_asset(silver_asset())
+
+# Job: Complete pipeline from Bronze to Gold
+@job
+def full_pipeline_job():
+    # This job runs the entire pipeline
+    gold_asset(silver_asset(bronze_asset()))
