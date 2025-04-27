@@ -1,5 +1,5 @@
 from dagster import RunRequest, sensor
-from .jobs import bvi_job
+from ..jobs import bvi_job
 
 @sensor(job=bvi_job)
 def bvi_sensor(context):

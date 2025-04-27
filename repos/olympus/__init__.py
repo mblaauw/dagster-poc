@@ -1,3 +1,0 @@
-"""
-Olympus Dagster project
-"""

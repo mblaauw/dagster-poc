@@ -1,0 +1,6 @@
+product_id,name,price,category,raw_timestamp
+101,Widget A,10.99,Electronics,2023-04-26T09:20:00
+102,Widget B,20.99,Electronics,2023-04-26T09:20:00
+103,Widget C,30.99,Home,2023-04-26T09:20:00
+104,Widget D,40.99,Home,2023-04-26T09:20:00
+105,Widget E,50.99,Office,2023-04-26T09:20:00
