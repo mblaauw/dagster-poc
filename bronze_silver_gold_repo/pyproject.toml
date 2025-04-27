@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "dagster_bronze_silver_gold"
+version = "0.1.0"
+description = "Dagster Bronze-Silver-Gold data pipeline using Polars and DuckDB"
+authors = ["Your Name <you@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+dagster = "^1.10"
+dagster-duckdb = "^0.21.10"
+polars = "^0.20.0"
+duckdb = "^0.10.0"
+pyarrow = "^15.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,7 @@
+dagster
+dagster-webserver
+dagster-k8s
+dagster-duckdb
+polars
+duckdb
+pyarrow

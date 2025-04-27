@@ -1,0 +1,7 @@
+[32m2025-04-27 22:00:10 +0200[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 58bfc202-56a5-4125-b125-7095582060b1 - 43408 - LOGS_CAPTURED - Started capturing logs in process (pid: 43408).
+[32m2025-04-27 22:00:10 +0200[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 58bfc202-56a5-4125-b125-7095582060b1 - 43408 - customers_bronze - STEP_START - Started execution of step "customers_bronze".
+[32m2025-04-27 22:00:10 +0200[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 58bfc202-56a5-4125-b125-7095582060b1 - 43408 - customers_bronze - STEP_OUTPUT - Yielded output "result" of type "String". (Type check passed).
+[32m2025-04-27 22:00:10 +0200[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 58bfc202-56a5-4125-b125-7095582060b1 - customers_bronze - Writing file at: /Users/mich/dev/dagster-poc/bronze_silver_gold_repo/.tmp_dagster_home_krnzu5x2/storage/customers_bronze using PickledObjectFilesystemIOManager...
+[32m2025-04-27 22:00:10 +0200[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 58bfc202-56a5-4125-b125-7095582060b1 - 43408 - customers_bronze - ASSET_MATERIALIZATION - Materialized value customers_bronze.
+[32m2025-04-27 22:00:10 +0200[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 58bfc202-56a5-4125-b125-7095582060b1 - 43408 - customers_bronze - HANDLED_OUTPUT - Handled output "result" using IO manager "io_manager"
+[32m2025-04-27 22:00:10 +0200[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 58bfc202-56a5-4125-b125-7095582060b1 - 43408 - customers_bronze - STEP_SUCCESS - Finished execution of step "customers_bronze" in 47ms.
