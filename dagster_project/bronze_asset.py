@@ -1,6 +1,7 @@
+import os
 import pandas as pd
 from dagster import asset, get_dagster_logger
-from dagster_project.resources import DataPaths
+from dagster_repo.data_generator import generate_bronze_data
 
 @asset(required_resource_keys={"data_paths"})
 def bronze_asset(context):
@@ -12,8 +13,13 @@ def bronze_asset(context):
     logger.info(f"Reading bronze data from: {input_file}")
 
     try:
-        # Read CSV into DataFrame
-        df = pd.read_csv(input_file)
+        # Check if file exists, if not generate it
+        if not os.path.exists(input_file):
+            logger.info(f"Bronze data file not found at {input_file}. Generating dummy data...")
+            df = generate_bronze_data(input_file)
+        else:
+            # Read CSV into DataFrame
+            df = pd.read_csv(input_file)
 
         # Log basic DataFrame info
         logger.info(f"Bronze data shape: {df.shape}")

@@ -1,8 +1,8 @@
 from dagster import job
 
-from dagster_project.bronze_asset import bronze_asset
-from dagster_project.silver_asset import silver_asset
-from dagster_project.gold_asset import gold_asset
+from dagster_repo.bronze_asset import bronze_asset
+from dagster_repo.silver_asset import silver_asset
+from dagster_repo.gold_asset import gold_asset
 
 # Job: Process from Bronze to Silver
 @job

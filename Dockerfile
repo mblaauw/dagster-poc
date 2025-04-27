@@ -25,8 +25,8 @@ COPY . .
 # Create Dagster home directory
 RUN mkdir -p $DAGSTER_HOME
 
-# Expose port (not strictly necessary for gRPC)
-EXPOSE 4000
+# Expose port for gRPC server
+EXPOSE 3030
 
 # Set entrypoint to Dagster gRPC server
-ENTRYPOINT ["dagster", "api", "grpc", "-m", "dagster_project"]
+ENTRYPOINT ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "3030", "-f", "dagster_repo/repository.py"]

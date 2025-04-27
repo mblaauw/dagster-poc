@@ -1,0 +1,549 @@
+# README:
+# - If using a fixed tag for images, changing the image pull policy to anything other than "Always"
+#   will use a cached/stale image.
+# - We recommend using unique tags for user code images, as this will guarantee that the docker
+#   image will be consistent for the pipeline's entire execution.
+---
+global:
+  postgresqlSecretName: "dagster-postgresql-secret"
+  # The DAGSTER_HOME env var is set by default on all nodes from this value
+  dagsterHome: "/opt/dagster/dagster_home"
+
+  # A service account name to use for this chart and all subcharts. If this is set, then
+  # dagster subcharts will not create their own service accounts.
+  serviceAccountName: ""
+
+  # The name for the secret used to pass Celery broker and backend connection urls. This can
+  # generally be left as the default, but can be useful if setting generateCeleryConfigSecret
+  # to false below.
+  celeryConfigSecretName: "dagster-celery-config-secret"
+
+nameOverride: ""
+fullnameOverride: ""
+rbacEnabled: true
+# Specify secrets to run containers based on images in private registries. See:
+# https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
+imagePullSecrets: []
+
+####################################################################################################
+# Dagster Webserver: Configuration for the Dagster webserver
+####################################################################################################
+dagsterWebserver:
+  replicaCount: 1
+  image:
+    # When a tag is not supplied for a Dagster provided image,
+    # it will default as the Helm chart version.
+    repository: "docker.io/dagster/dagster-celery-k8s"
+    tag: ~
+    pullPolicy: Always
+
+  # Support overriding the name prefix of the webserver pods
+  nameOverride: "dagster-webserver"
+
+  # Support path prefix (i.e. /dagster)
+  pathPrefix: ~
+
+  service:
+    type: LoadBalancer
+    # Defines the port where the webserver will serve requests; if changed, don't forget to update the
+    # livenessProbe and startupProbe entries below as well.
+    port: 80
+    annotations: {}
+
+  # Defines a workspace for the webserver. This should only be set if user deployments are enabled, but
+  # the subchart is disabled to manage user deployments in a separate Helm release.
+  # In this case, the webserver will need the addresses of the code servers in order to load the user code,
+  # or the name of an existing configmap to mount as the workspace file.
+  workspace:
+    enabled: true
+
+    # List of servers to include in the workflow file. When set,
+    # `externalConfigmap` must be empty.
+    servers:
+      - host: "dagster-repo"
+        port: 3030
+        name: "dagster-repo"
+
+    # Defines the name of a configmap provisioned outside of the
+    # Helm release to use as workspace file. When set, `servers`
+    # must be empty.
+    externalConfigmap: ~
+
+  # Deploy a separate instance of the webserver in --read-only mode (can't launch runs, disable schedules, etc.)
+  enableReadOnly: false
+
+  # The timeout in milliseconds to set on database statements sent to the Dagster instance.
+  dbStatementTimeout: ~
+
+  # The maximum age in seconds of a connection to use in the sqlalchemy connection pool.
+  # Defaults to 1 hour if not set.
+  # Set to -1 to disable.
+  dbPoolRecycle: ~
+
+  # The maximum overflow size of the sqlalchemy pool. Set to -1 to disable.
+  dbPoolMaxOverflow: ~
+
+  # The log level of the uvicorn web server, defaults to warning if not set
+  logLevel: "INFO"
+
+  # Additional environment variables to set.
+  # These will be directly applied to the daemon container. See
+  # https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/
+  #
+  # Example:
+  #
+  # env:
+  # - name: ENV_ONE
+  #   value: "one"
+  # - name: ENV_TWO
+  #   value: "two"
+  env: []
+
+  # Additional environment variables can be retrieved and set from ConfigMaps. See:
+  # https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#configure-all-key-value-pairs-in-a-configmap-as-container-environment-variables
+  #
+  # Example:
+  #
+  # envConfigMaps:
+  #   - name: config-map
+  envConfigMaps: []
+
+  # Additional environment variables can be retrieved and set from Secrets. See:
+  # https://kubernetes.io/docs/concepts/configuration/secret/#use-case-as-container-environment-variables
+  #
+  # Example:
+  #
+  # envSecrets:
+  #   - name: secret
+  envSecrets: []
+
+  # Additional labels that should be included on the deployment. See:
+  # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+  #
+  # Example:
+  # labels:
+  #   my-label-key: my_label-value
+  deploymentLabels: {}
+
+  # Additional labels that should be included on the pod. See:
+  # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+  #
+  # Example:
+  # labels:
+  #   my-label-key: my_label-value
+  labels: {}
+
+  # Additional volumes that should be included. See:
+  # https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
+  #
+  # Example:
+  #
+  # volumes:
+  #   - name: my-volume
+  #     configMap: my-config-map
+  volumes:
+    - name: dagster-instance
+      configMap:
+        name: dagster-instance
+
+  # Additional volume mounts that should be included. See:
+  # See: https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core
+  #
+  # Example:
+  #
+  # volumeMounts:
+  #   - name: test-volume
+  #     mountPath: /opt/dagster/test_folder
+  #     subPath: test_file.yaml
+  volumeMounts:
+    - name: dagster-instance
+      mountPath: /opt/dagster/dagster_home/dagster.yaml
+      subPath: dagster.yaml
+
+  # Additional containers that should run as sidecars to the webserver. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/#how-pods-manage-multiple-containers
+  # For K8s versions after 1.29, prefer using extraPrependedInitContainers instead. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+  #
+  # Example:
+  # extraContainers:
+  #   - name: my-sidecar
+  #     image: busybox
+  extraContainers: []
+
+  # Additional init containers that should run before the webserver's init container, such as sidecars.
+  # For K8s versions after 1.29, see:
+  # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+  #
+  # Extra init containers are started **before** the connection to the database is tested. #
+  # Example:
+  # extraPrependedInitContainers:
+  #   - name: my-sidecar
+  #     image: busybox
+  extraPrependedInitContainers: []
+
+  # Support Node, affinity and tolerations for webserver pod assignment. See:
+  # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+  # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  annotations: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  podSecurityContext: {}
+  securityContext: {}
+  resources: {}
+
+  # Configure initContainer resources separately from main container
+  initContainerResources: {}
+
+  # Enable the check-db-ready initContainer
+  checkDbReadyInitContainer: true
+
+  # Override the default K8s scheduler
+  # schedulerName: ~
+
+  # If you want to specify resources, uncomment the following lines, adjust them as necessary,
+  # and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # Readiness probe detects when the pod is ready to serve requests.
+  # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
+  readinessProbe:
+    httpGet:
+      path: "/server_info"
+      port: 80
+    periodSeconds: 20
+    timeoutSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
+
+  # As of 0.14.0, liveness probes are disabled by default. If you want to enable them, it's recommended to also
+  # enable startup probes.
+  livenessProbe: {}
+  startupProbe:
+    enabled: false
+
+####################################################################################################
+# Compute Log Manager: Configuration for the compute log manager
+####################################################################################################
+computeLogManager:
+  replicaCount: 1
+  image:
+    # When a tag is not supplied for a Dagster provided image,
+    # it will default as the Helm chart version.
+    repository: "docker.io/dagster/dagster-celery-k8s"
+    tag: ~
+    pullPolicy: Always
+
+  # Support overriding the name prefix of the compute log manager pods
+  nameOverride: "dagster-compute-log-manager"
+
+  # Additional environment variables to set.
+  # These will be directly applied to the daemon container. See
+  # https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/
+  #
+  # Example:
+  #
+  # env:
+  # - name: ENV_ONE
+  #   value: "one"
+  # - name: ENV_TWO
+  #   value: "two"
+  env: []
+
+  # Additional environment variables can be retrieved and set from ConfigMaps. See:
+  # https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#configure-all-key-value-pairs-in-a-configmap-as-container-environment-variables
+  #
+  # Example:
+  #
+  # envConfigMaps:
+  #   - name: config-map
+  envConfigMaps: []
+
+  # Additional environment variables can be retrieved and set from Secrets. See:
+  # https://kubernetes.io/docs/concepts/configuration/secret/#use-case-as-container-environment-variables
+  #
+  # Example:
+  #
+  # envSecrets:
+  #   - name: secret
+  envSecrets: []
+
+  # Additional labels that should be included on the deployment. See:
+  # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+  #
+  # Example:
+  # labels:
+  #   my-label-key: my_label-value
+  deploymentLabels: {}
+
+  # Additional labels that should be included on the pod. See:
+  # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+  #
+  # Example:
+  # labels:
+  #   my-label-key: my_label-value
+  labels: {}
+
+  # Additional volumes that should be included. See:
+  # https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
+  #
+  # Example:
+  #
+  # volumes:
+  #   - name: my-volume
+  #     configMap: my-config-map
+  volumes: []
+
+  # Additional volume mounts that should be included. See:
+  # See: https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core
+  #
+  # Example:
+  #
+  # volumeMounts:
+  #   - name: test-volume
+  #     mountPath: /opt/dagster/test_folder
+  #     subPath: test_file.yaml
+  volumeMounts: []
+
+  # Additional containers that should run as sidecars to the compute log manager. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/#how-pods-manage-multiple-containers
+  # For K8s versions after 1.29, prefer using extraPrependedInitContainers instead. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+  #
+  # Example:
+  # extraContainers:
+  #   - name: my-sidecar
+  #     image: busybox
+  extraContainers: []
+
+  # Additional init containers that should run before the compute log manager's init container, such as sidecars.
+  # For K8s versions after 1.29, see:
+  # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+  #
+  # Extra init containers are started **before** the connection to the database is tested. #
+  # Example:
+  # extraPrependedInitContainers:
+  #   - name: my-sidecar
+  #     image: busybox
+  extraPrependedInitContainers: []
+
+  # Support Node, affinity and tolerations for compute log manager pod assignment. See:
+  # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+  # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  annotations: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  podSecurityContext: {}
+  securityContext: {}
+  resources: {}
+
+  # Configure initContainer resources separately from main container
+  initContainerResources: {}
+
+  # Enable the check-db-ready initContainer
+  checkDbReadyInitContainer: true
+
+  # Override the default K8s scheduler
+  # schedulerName: ~
+
+  # If you want to specify resources, uncomment the following lines, adjust them as necessary,
+  # and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+####################################################################################################
+# User Deployments: Configuration for the user code deployments
+####################################################################################################
+userDeployments:
+  enabled: true
+  deployments:
+    # The name of the deployment. This will be used as the name of the deployment in Kubernetes.
+    - name: "dagster-repo"
+      image:
+        repository: "dagster-repo"
+        tag: "latest"
+        pullPolicy: Always
+      dagsterApiGrpcArgs:
+        - "--python-file"
+        - "/opt/dagster/app/repository.py"
+      port: 3030
+      # If you want to specify resources, uncomment the following lines, adjust them as necessary,
+      # and remove the curly braces after 'resources:'.
+      # limits:
+      #   cpu: 100m
+      #   memory: 128Mi
+      # requests:
+      #   cpu: 100m
+      #   memory: 128Mi
+      resources: {}
+      # Additional environment variables to set.
+      # These will be directly applied to the daemon container. See
+      # https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/
+      #
+      # Example:
+      #
+      # env:
+      # - name: ENV_ONE
+      #   value: "one"
+      # - name: ENV_TWO
+      #   value: "two"
+      env: []
+      # Additional environment variables can be retrieved and set from ConfigMaps. See:
+      # https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#configure-all-key-value-pairs-in-a-configmap-as-container-environment-variables
+      #
+      # Example:
+      #
+      # envConfigMaps:
+      #   - name: config-map
+      envConfigMaps: []
+      # Additional environment variables can be retrieved and set from Secrets. See:
+      # https://kubernetes.io/docs/concepts/configuration/secret/#use-case-as-container-environment-variables
+      #
+      # Example:
+      #
+      # envSecrets:
+      #   - name: secret
+      envSecrets: []
+      # Additional labels that should be included on the deployment. See:
+      # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+      #
+      # Example:
+      # labels:
+      #   my-label-key: my_label-value
+      deploymentLabels: {}
+      # Additional labels that should be included on the pod. See:
+      # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+      #
+      # Example:
+      # labels:
+      #   my-label-key: my_label-value
+      labels: {}
+      # Additional volumes that should be included. See:
+      # https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
+      #
+      # Example:
+      #
+      # volumes:
+      #   - name: my-volume
+      #     configMap: my-config-map
+      volumes:
+        - name: bronze-storage
+          persistentVolumeClaim:
+            claimName: bronze-pvc
+        - name: silver-storage
+          persistentVolumeClaim:
+            claimName: silver-pvc
+        - name: gold-storage
+          persistentVolumeClaim:
+            claimName: gold-pvc
+      # Additional volume mounts that should be included. See:
+      # See: https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core
+      #
+      # Example:
+      #
+      # volumeMounts:
+      #   - name: test-volume
+      #     mountPath: /opt/dagster/test_folder
+      #     subPath: test_file.yaml
+      volumeMounts:
+        - name: bronze-storage
+          mountPath: /opt/dagster/app/data/bronze
+        - name: silver-storage
+          mountPath: /opt/dagster/app/data/silver
+        - name: gold-storage
+          mountPath: /opt/dagster/app/data/gold
+      # Additional containers that should run as sidecars to the user code deployment. See:
+      # https://kubernetes.io/docs/concepts/workloads/pods/#how-pods-manage-multiple-containers
+      # For K8s versions after 1.29, prefer using extraPrependedInitContainers instead. See:
+      # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+      #
+      # Example:
+      # extraContainers:
+      #   - name: my-sidecar
+      #     image: busybox
+      extraContainers: []
+      # Additional init containers that should run before the user code deployment's init container, such as sidecars.
+      # For K8s versions after 1.29, see:
+      # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+      #
+      # Extra init containers are started **before** the connection to the database is tested. #
+      # Example:
+      # extraPrependedInitContainers:
+      #   - name: my-sidecar
+      #     image: busybox
+      extraPrependedInitContainers: []
+      # Support Node, affinity and tolerations for user code deployment pod assignment. See:
+      # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+      # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+      # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+      annotations: {}
+      nodeSelector: {}
+      affinity: {}
+      tolerations: []
+      podSecurityContext: {}
+      securityContext: {}
+      # Configure initContainer resources separately from main container
+      initContainerResources: {}
+      # Enable the check-db-ready initContainer
+      checkDbReadyInitContainer: true
+      # Override the default K8s scheduler
+      # schedulerName: ~
+
+####################################################################################################
+# PostgreSQL: Configuration for PostgreSQL database
+####################################################################################################
+postgresql:
+  enabled: true
+  image:
+    registry: "docker.io"
+    repository: "library/postgres"
+    tag: "14.6"
+    pullPolicy: IfNotPresent
+
+  postgresqlUsername: "dagster"
+  postgresqlPassword: "dagster"
+  postgresqlDatabase: "dagster"
+  service:
+    port: 5432
+
+####################################################################################################
+# Run Launcher: Configuration for run launcher
+####################################################################################################
+runLauncher:
+  type: K8sRunLauncher
+  config:
+    k8sRunLauncher:
+      imagePullPolicy: "Always"
+      loadInclusterConfig: true
+      envVars: []
+      volumes: []
+      volumeMounts: []
+      labels: {}
+      resources: {}
+      failPodOnRunFailure: false
+
+####################################################################################################
+# Telemetry: Configuration for telemetry
+####################################################################################################
+telemetry:
+  enabled: false
+
+####################################################################################################
+# Service Account: Configuration for service account
+####################################################################################################
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
