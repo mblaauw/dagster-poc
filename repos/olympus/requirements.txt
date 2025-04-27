@@ -1,0 +1,9 @@
+dagster[all]
+dagster-webserver
+dagster-k8s
+dagster-postgres
+psycopg2-binary
+pandas
+numpy
+pyyaml  # (if reading yaml files later)
+requests

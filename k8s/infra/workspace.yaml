@@ -1,4 +1,0 @@
-load_from:
-  - grpc_server:
-      host: "dagster-repo"
-      port: 3030
