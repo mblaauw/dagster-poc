@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "mlops_repo"
+version = "0.1.0"
+description = "Basic MLOps pipeline with Dagster, Sklearn, and best practices"
+authors = ["Your Name <you@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+dagster = "^1.10"
+scikit-learn = "^1.3.0"
+polars = "^0.20.0"
+pickle5 = "^0.0.11"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
