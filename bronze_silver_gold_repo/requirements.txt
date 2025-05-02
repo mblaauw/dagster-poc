@@ -2,6 +2,7 @@ dagster
 dagster-webserver
 dagster-k8s
 dagster-duckdb
+deltalake
 polars
 duckdb
 pyarrow
